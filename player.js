@@ -7,7 +7,11 @@ var counter = 0;
 var previous = null;
 var hist = [];
 
-while (solvable && counter < maze.height * maze.width && currentIdx < maze.height * maze.width - 1) {
+var surrender = 2000;
+var exit = (maze.height * maze.width - 1);
+
+while (solvable && counter < surrender && currentIdx < exit) {
+
   available = maze.getAvailableDirections();
 
   // Randomize the next direction
@@ -26,14 +30,16 @@ while (solvable && counter < maze.height * maze.width && currentIdx < maze.heigh
   while(i < 4) {
     var d = dirs[rand].dir;
     var n = maze.idxForMove(d);
-    console.log(`Next: ${n}`);
+
     console.log(hist);
+    console.log(`${n} = ${includesFewerThan(hist, n)}`);
+
     if (
       available[d] &&
       !(idx === 0 && d === 'l') &&
       !(idx === 0 && d === 'u') &&
       !(hist.includes(n)) &&
-      !(includesCount(hist, n))
+      (includesFewerThan(hist, n))
     ) {
       maze[dirs[rand].func]();
       hist.push(idx);
@@ -56,16 +62,30 @@ function getRandomIntInclusive(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function includesCount(arr, valu) {
-  var s = false;
-  var x = 0;
-  for (var i=0; i < arr.length; i++) {
-    if (arr[i] === valu) {
-      x++;
+
+function numAvailableDirections() {
+  var count = 0;
+  var available = maze.getAvailableDirections();
+  for(key in available) {
+    if (available[key]) {
+      count++;
     }
   }
-  if (x >= 3) {
-    s = true;
+  return count;
+}
+
+
+function includesFewerThan(arr, valu) {
+  var status = true;
+  var count = 0;
+  var total = numAvailableDirections() + 2;
+  for (var i=0; i < arr.length; i++) {
+    if (arr[i] === valu) {
+      count++;
+    }
   }
-  return s;
+  if (count >= total) {
+    status = false;
+  }
+  return status;
 }
