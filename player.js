@@ -10,11 +10,14 @@ var hist = {
 };
 var idx = 0;
 var next = 'u';
+let score = 0;
 
 let intro = new Audio('pacman_beginning.wav');
 let chomp = new Audio('pacman_chomp.wav');
 let death = new Audio('pacman_death.wav');
 let win = new Audio('pacman_intermission.wav');
+
+document.querySelector('body').innerHTML += '<div class="ready">READY!</div>';
 
 var surrender = 5000;
 var exit = (maze.height * maze.width - 1);
@@ -22,16 +25,27 @@ var exit = (maze.height * maze.width - 1);
 var plan = 0;
 var strategy = [
   ['r', 'd', 'u', 'l'],
-  ['l', 'u', 'r', 'd']
+  ['l', 'u', 'r', 'd'],
+  ['r', 'd', 'l', 'u'],
+  ['l', 'u', 'd', 'r'],
+  ['d', 'r', 'u', 'l']
 ];
 
 intro.play();
 
 setTimeout( function() {
 
+  document.querySelector('body').removeChild(document.querySelector('.ready'));
+
   document.body.addEventListener('playbackFinished', function() {
     chomp.pause();
     win.play();
+  });
+
+  document.body.addEventListener('cellVisited', function() {
+    score ++;
+    let html = `1 UP &nbsp;&nbsp;&nbsp; Score: ${Math.round(score/2)}`;
+    document.querySelector('#score').innerHTML = html;
   });
 
   while (solvable && counter < surrender && currentIdx < exit) {
@@ -69,7 +83,7 @@ setTimeout( function() {
     }
 
     // Reset the plan each cycle
-    plan = 0;
+    // plan = 0;
 
     previous = currentIdx;
     currentIdx = maze.currentIdx();
@@ -77,11 +91,6 @@ setTimeout( function() {
   }
 
   maze.stop(solvable);
-  if (solvable) {
-    setTimeout( function() {
-      chomp.pause();
-    }, 120000);
-  }
 
 }, 4000);
 
@@ -233,7 +242,7 @@ function visits(hist, location, direction) {
 // Quit trying, it's a Sisyphean task
 function quit() {
   console.log("GAME OVER!");
-  document.querySelector('body').innerHTML += '<img src="gameover.gif" class="over" />';
+  document.querySelector('body').innerHTML += '<div class="over">GAME OVER</div>';
   chomp.pause();
   death.play();
   maze.stop(false);

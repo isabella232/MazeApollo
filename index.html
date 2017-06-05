@@ -1,9 +1,13 @@
 <html>
   <head>
+    <link href="https://fonts.googleapis.com/css?family=Press+Start+2P" rel="stylesheet">
     <style>
       body {
-        padding: 0;
+        background-color: black;
+        font-family: 'Press Start 2P', monospace;
         margin: 0;
+        padding: 0;
+        text-transform: uppercase;
       }
 
       #maze {
@@ -14,33 +18,68 @@
 
       .node {
         display: inline-block;
-        padding: 0;
         margin:0;
+        padding: 0;
       }
 
-      .current {
+      .node:after {
+        display: block;
+        content: "-";
+        color: yellow;
+        font-size: 1em;
+        text-align: center;
+        vertical-align: middle;
+        line-height: 2em;
+      }
+
+      .node.visited:after {
+        color: transparent;
+      }
+
+      .node.current,
+      .node.visited.current {
         background-image: url('pacman.gif');
+        background-position: 0 0;
         background-size: 100%;
       }
 
-      .over {
-        margin: auto;
-        position: absolute;
-        top: 0;
-        right: 0;
-        bottom: 0;
+      .over, .ready {
+        background-color: black;
+        color: red;
+        font-size: 3em;
         left: 0;
+        margin: auto;
+        padding: .5em;
+        position: absolute;
+        right: 0;
+        text-align: center;
+        top: 200px;
+        width: 40%;
         z-index: 999;
-        width: 50%;
+      }
+
+      .ready {
+        color: yellow;
+      }
+
+      #score {
+        background-color: black;
+        color: white;
+        font-family: 'Press Start 2P', monospace;
+        font-size: 2em;
+        font-weight: bold;
+        margin: 0;
+        padding: 40px;
+        width: 80%;
       }
     </style>
   </head>
   <body>
-    <!-- https://media.giphy.com/media/Qr8JE9Hvi7ave/giphy.gif -->
     <div id="maze">
     </div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/2.4.3/seedrandom.min.js"></script>
     <script type="text/javascript" src="maze.js"></script>
     <script type="text/javascript" src="player.js"></script>
+    <div id="score">1 UP &nbsp;&nbsp;&nbsp; SCORE: 0</div>
   </body>
 </html>

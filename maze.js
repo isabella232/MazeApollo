@@ -80,6 +80,7 @@ class Maze {
       var cellObj = cells[idx]
       var node = this.createNode(cellObj);
       node.id = idx;
+      node.setAttribute('data-id', idx);
       this.addNode(node);
     }
   }
@@ -139,23 +140,21 @@ class Maze {
     if (playBackIdx > 0) {
       var currentIdx = this.moves[playBackIdx - 1];
       var currentNode = document.getElementById("" + currentIdx);
-      currentNode.className = currentNode.className.replace("current", "");
+      currentNode.className = currentNode.className.replace("current", "visited");
     }
 
     var destinationIdx = this.moves[playBackIdx];
     var destinationNode = document.getElementById("" + destinationIdx)
     destinationNode.className += " current";
 
-    console.log(`${destinationIdx} === ${this.height} * ${this.width} - 1 ${(this.height * this.width - 1)}`);
-
     if (destinationIdx === this.height * this.width - 1) {
       document.body.dispatchEvent(new Event('playbackFinished'));
-      console.log('done');
     }
 
     var that = this;
     if (this.moves.length > playBackIdx + 1) {
       setTimeout(function() {
+        document.body.dispatchEvent(new Event('cellVisited'));
         that.playBackNextMove(playBackIdx + 1);
       }, 300);
     }
