@@ -61,11 +61,11 @@ class Maze {
     var cellWidth = 100 / this.width * 0.8;
     var borderWidth = 100 / this.width * 0.1;
 
-    style.innerHTML = '.node { width: ' + cellWidth + 'vw; height: ' + cellWidth + 'vw; border: ' + borderWidth + 'vw solid #DDD; }';
-    style.innerHTML += ' .top { border-top: ' + borderWidth + 'vw solid #CCC; }';
-    style.innerHTML += ' .right { border-right: ' + borderWidth + 'vw solid #CCC; }';
-    style.innerHTML += ' .bottom { border-bottom: ' + borderWidth + 'vw solid #CCC; }';
-    style.innerHTML += ' .left { border-left: ' + borderWidth + 'vw solid #CCC; }';
+    style.innerHTML = '.node { width: ' + cellWidth + 'vw; height: ' + cellWidth + 'vw; border: ' + borderWidth + 'vw solid black; }';
+    style.innerHTML += ' .top { border-top: ' + borderWidth + 'vw solid blue; }';
+    style.innerHTML += ' .right { border-right: ' + borderWidth + 'vw solid blue; }';
+    style.innerHTML += ' .bottom { border-bottom: ' + borderWidth + 'vw solid blue; }';
+    style.innerHTML += ' .left { border-left: ' + borderWidth + 'vw solid blue; }';
 
     var head = document.getElementsByTagName('head')[0];
     head.insertBefore(style, head.firstChild);
@@ -145,6 +145,13 @@ class Maze {
     var destinationIdx = this.moves[playBackIdx];
     var destinationNode = document.getElementById("" + destinationIdx)
     destinationNode.className += " current";
+
+    console.log(`${destinationIdx} === ${this.height} * ${this.width} - 1 ${(this.height * this.width - 1)}`);
+
+    if (destinationIdx === this.height * this.width - 1) {
+      document.body.dispatchEvent(new Event('playbackFinished'));
+      console.log('done');
+    }
 
     var that = this;
     if (this.moves.length > playBackIdx + 1) {

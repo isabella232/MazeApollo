@@ -5,87 +5,237 @@ var available = {};
 var currentIdx = 0;
 var counter = 0;
 var previous = null;
-var hist = [];
+var hist = {
+  path: []
+};
+var idx = 0;
+var next = 'u';
 
-var surrender = 2000;
+let intro = new Audio('pacman_beginning.wav');
+let chomp = new Audio('pacman_chomp.wav');
+let death = new Audio('pacman_death.wav');
+let win = new Audio('pacman_intermission.wav');
+
+var surrender = 5000;
 var exit = (maze.height * maze.width - 1);
 
-while (solvable && counter < surrender && currentIdx < exit) {
+var plan = 0;
+var strategy = [
+  ['r', 'd', 'u', 'l'],
+  ['l', 'u', 'r', 'd']
+];
 
-  available = maze.getAvailableDirections();
+intro.play();
 
-  // Randomize the next direction
-  var rand = getRandomIntInclusive(0,3);
+setTimeout( function() {
 
-  var dirs = [
-    {"dir":"r", "func":"moveRight"},
-    {"dir":"l", "func":"moveLeft"},
-    {"dir":"u", "func":"moveUp"},
-    {"dir":"d", "func":"moveDown"}
-  ];
+  document.body.addEventListener('playbackFinished', function() {
+    chomp.pause();
+    win.play();
+  });
 
-  var idx = maze.currentIdx();
+  while (solvable && counter < surrender && currentIdx < exit) {
 
-  var i = 0;
-  while(i < 4) {
-    var d = dirs[rand].dir;
-    var n = maze.idxForMove(d);
+    chomp.play();
+    chomp.addEventListener('ended', function() {
+      this.currentTime = 0;
+      this.play();
+    }, false);
+    chomp.play();
 
-    console.log(hist);
-    console.log(`${n} = ${includesFewerThan(hist, n)}`);
+    cont = true;
+    available = maze.getAvailableDirections();
+    idx = maze.currentIdx();
+    let i = 0;
 
-    if (
-      available[d] &&
-      !(idx === 0 && d === 'l') &&
-      !(idx === 0 && d === 'u') &&
-      !(hist.includes(n)) &&
-      (includesFewerThan(hist, n))
-    ) {
-      maze[dirs[rand].func]();
-      hist.push(idx);
-      break;
+    // It's a traaaaaaap!
+    if (!available || trap() || idx < 0) {
+      quit();
     }
-    i++;
+
+    // Using our selected plan, pick the strategic order to follow
+    // If our strategy fails, change plan
+    for (i=0; i<strategy[plan].length; i++) {
+      d = strategy[plan][i];
+      if (available && available.hasOwnProperty(d)) {
+        n = maze.idxForMove(d);
+        if (!should(hist, n, d, available) || previous === n) {
+          cont = true;
+        } else {
+          cont = move(hist, n, d);
+          break;
+        }
+      }
+    }
+
+    // Reset the plan each cycle
+    plan = 0;
+
+    previous = currentIdx;
+    currentIdx = maze.currentIdx();
+    counter++;
   }
 
-  previous = currentIdx;
-  currentIdx = maze.currentIdx();
-  counter++;
-}
-
-maze.stop(solvable);
-
-
-function getRandomIntInclusive(min, max) {
-  var min = Math.ceil(min);
-  var max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-
-function numAvailableDirections() {
-  var count = 0;
-  var available = maze.getAvailableDirections();
-  for(key in available) {
-    if (available[key]) {
-      count++;
-    }
+  maze.stop(solvable);
+  if (solvable) {
+    setTimeout( function() {
+      chomp.pause();
+    }, 120000);
   }
-  return count;
+
+}, 4000);
+
+// Keeps track of where we've been
+function journal(hist, location, direction) {
+  let action = {};
+  let visit = visits(hist, location, direction) + 1;
+  if (!hist.hasOwnProperty(location)) {
+    hist[location] = {};
+  }
+  hist[location][direction] = visit;
+  hist.path.push(location);
+  return hist;
 }
 
+// Do these arrays match?
+function match(a1, a2) {
+  return a1.length==a2.length && a1.every(function(v,i) { return v === a2[i]});
+}
 
-function includesFewerThan(arr, valu) {
-  var status = true;
-  var count = 0;
-  var total = numAvailableDirections() + 2;
-  for (var i=0; i < arr.length; i++) {
-    if (arr[i] === valu) {
-      count++;
-    }
+// Let's take the plunge
+function move(hist, location, direction) {
+  if (direction === 'l') {
+    maze.moveLeft();
+  } else if (direction === 'r') {
+    maze.moveRight();
+  } else if (direction === 'u') {
+    maze.moveUp();
+  } else if (direction === 'd') {
+    maze.moveDown();
   }
-  if (count >= total) {
-    status = false;
+  journal(hist, location, direction);
+  return false;
+}
+
+// Do we have other options?
+function options(available, direction) {
+  let status = false;
+  for (let key in available) {
+    if (available.hasOwnProperty(key) && available[key] !== direction) {
+      status = true;
+    }
   }
   return status;
+}
+
+// Have we repeated this pattern?
+function pattern(hist, location, len) {
+  if (hist.path.length >= len) {
+    let quad = hist.path.slice((-len));
+    for (let i=0; i<10; i++) {
+      prev = hist.path.slice((-len), (-i));
+      len++;
+      if (match(quad, prev) && hist.path.includes(location)) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// If we get stuck in a pattern, then move forward and take an alternate route
+function recalculate(hist, location) {
+  stuck();
+  hist.path = [];
+}
+
+// Have we been here recently?
+function recent(hist, location, direction) {
+  let quad = hist.path.slice(-4);
+  if (pattern(hist, location, 2) || pattern(hist, location, 3) || pattern(hist, location, 4) || pattern(hist, location, 5) || pattern(hist, location, 6)) {
+    recalculate(hist, location);
+    return true;
+  }else if (quad.includes(location) && repeats(hist, location, direction)) {
+    return true;
+  }
+  return false;
+}
+
+function repeats(hist, location, direction) {
+  if (hist.hasOwnProperty(location)) {
+    if (hist[location].hasOwnProperty(direction)) {
+      if (parseInt(hist[location][direction], 10) >= 5) {
+        stuck();
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+// Determines if we should go this route
+function should(hist, location, direction, available) {
+  let max = 2;
+  let status = false;
+  let visit = visits(hist, location, direction);
+
+  // Are we stuck?
+  if (
+    (!options(available, direction) && recent(hist, location, direction)) ||
+    (!options(available, direction) && pattern(hist))
+  ) {
+    stuck();
+  }
+
+  // If we've been this way more than once and other options are available, then skip
+  if (visit >= max && options(available, direction)) {
+    return false;
+  }
+
+  // Should we keep going?
+  if ((visit < max && !recent(hist, location, direction)) || !options(available, direction)) {
+    status = true;
+  } else {
+    status = false;
+  }
+
+  return status;
+}
+
+// If we're stuck, change plans
+function stuck() {
+  return (plan === 0)? 1:0;
+}
+
+// Is this a trap?
+function trap() {
+  if (available) {
+    for(let key in available) {
+      if (available.hasOwnProperty(key)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
+// Keeps track of the number of visits to each location
+function visits(hist, location, direction) {
+  let visit = 0;
+  if (hist.hasOwnProperty(location)) {
+    if (hist[location].hasOwnProperty(direction)) {
+      visit = parseInt(hist[location][direction], 10);
+    }
+  }
+  return visit;
+}
+
+// Quit trying, it's a Sisyphean task
+function quit() {
+  console.log("GAME OVER!");
+  document.querySelector('body').innerHTML += '<img src="gameover.gif" class="over" />';
+  chomp.pause();
+  death.play();
+  maze.stop(false);
+  counter = surrender + 1;
 }
