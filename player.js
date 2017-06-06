@@ -1,15 +1,15 @@
 // Works for /index.html?width=10&height=5&seed=9
 
-var solvable = true;
-var available = {};
-var currentIdx = 0;
-var counter = 0;
-var previous = null;
-var hist = {
+let solvable = true;
+let available = {};
+let currentIdx = 0;
+let counter = 0;
+let previous = null;
+let hist = {
   path: []
 };
-var idx = 0;
-var next = 'u';
+let idx = 0;
+let next = 'u';
 let score = 0;
 
 let intro = new Audio('pacman_beginning.wav');
@@ -19,14 +19,18 @@ let win = new Audio('pacman_intermission.wav');
 
 document.querySelector('body').innerHTML += '<div class="ready">READY!</div>';
 
-var surrender = 5000;
-var exit = (maze.height * maze.width - 1);
+let surrender = 5000;
+let exit = (maze.height * maze.width - 1);
 
-var plan = 0;
-var strategy = [
-  ['r', 'd', 'u', 'l'],
-  ['l', 'd', 'r', 'u'],
-  ['l', 'd', 'u', 'r']
+
+let plan = 0;
+let pold = plan;
+let strategy = [
+  ['r', 'd', 'l', 'u'],   // Move toward target
+  ['l', 'd', 'r', 'u'],   // Move from NE to center
+  ['d', 'r', 'l', 'u'],   // Move from NW center
+  ['u', 'r', 'd', 'l'],   // Move from SW toward center
+  ['u', 'l', 'r', 'd']    // Move from SE toward center
 ];
 
 intro.play();
@@ -76,6 +80,9 @@ setTimeout( function() {
       quit();
     }
 
+    // Set strategy
+    plan = strategize(idx);
+
     // Using our selected plan, pick the strategic order to follow
     // If our strategy fails, change plan
     for (i=0; i<strategy[plan].length; i++) {
@@ -115,6 +122,15 @@ function journal(hist, location, direction) {
   return hist;
 }
 
+// Was this our last move?
+function last(hist, location) {
+  let last = hist.path.slice(-1);
+  if (last === location) {
+    return true;
+  }
+  return false;
+}
+
 // Do these arrays match?
 function match(a1, a2) {
   return a1.length==a2.length && a1.every(function(v,i) { return v === a2[i]});
@@ -147,6 +163,9 @@ function options(available, direction) {
 }
 
 // Have we repeated this pattern?
+// Looks for patterns of 3 to 10 moves
+// Analyzes last set of 4 moves (quad) to avoid small box capture
+// TODO: Tune to find entrances/exits in large open areas
 function pattern(hist, location) {
   for (let len=3; len<10; len++) {
     if (hist.path.length >= len) {
@@ -165,13 +184,30 @@ function pattern(hist, location) {
   return false;
 }
 
-// Was this our last move?
-function last(hist, location) {
-  let last = hist.path.slice(-1);
-  if (last === location) {
-    return true;
+// Determine which quadrant of the maze we're in
+// Switch strategy based on location
+function quadrants(location) {
+  let result = '';
+  let w = maze.width;
+  let h = maze.height;
+  let w2 = Math.ceil(w/2);
+  let h2 = Math.ceil(h/2);
+  let r = Math.floor((location/w))+1;
+  let c = Math.round((location%w))+1;
+
+  if (r <= h2) {
+    result = 'n';
+  } else {
+    result = 's';
   }
-  return false;
+
+  if (c <= w2) {
+    result += 'w';
+  } else {
+    result += 'e';
+  }
+
+  return result;
 }
 
 // If we get stuck in a pattern, then move forward and take an alternate route
@@ -244,6 +280,33 @@ function statusLog(message) {
   let status = document.querySelector('#status');
   status.innerHTML += message + '<br />';
   return true;
+}
+
+// Select a strategy based on our location
+function strategize() {
+  let quadrant = quadrants(idx);
+  if (quadrant === 'nw') {
+    if (pold !== 0) {
+      statusLog(` - Changing strategies (${quadrant}): ${strategy[0]}`);
+    }
+    return 0;
+  } else if (quadrant === 'ne') {
+    if (pold !== 1) {
+      statusLog(` - Changing strategies (${quadrant}): ${strategy[1]}`);
+    }
+    return 1;
+  } else if (quadrant === 'sw') {
+    if (pold !== 3) {
+      statusLog(` - Changing strategies (${quadrant}): ${strategy[3]}`);
+    }
+    return 3;
+  } else if (quadrant === 'se') {
+    if (pold !== 0) {
+      statusLog(` - Changing strategies (${quadrant}): ${strategy[0]}`);
+    }
+    return 0;
+  }
+  return 0;
 }
 
 // If we're stuck, change plans
