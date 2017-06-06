@@ -25,10 +25,8 @@ var exit = (maze.height * maze.width - 1);
 var plan = 0;
 var strategy = [
   ['r', 'd', 'u', 'l'],
-  ['l', 'u', 'r', 'd'],
-  ['r', 'd', 'l', 'u'],
-  ['l', 'u', 'd', 'r'],
-  ['d', 'r', 'u', 'l']
+  ['l', 'd', 'r', 'u'],
+  ['l', 'd', 'u', 'r']
 ];
 
 intro.play();
@@ -36,6 +34,17 @@ intro.play();
 setTimeout( function() {
 
   document.querySelector('body').removeChild(document.querySelector('.ready'));
+
+  let mute = document.querySelector('#mute');
+  mute.addEventListener('click', function(event) {
+    let btn = event.currentTarget;
+    if (btn.classList.value.indexOf('mute')) {
+      chomp.pause();
+    } else {
+      chomp.play();
+    }
+    btn.classList.toggle('mute');
+  });
 
   document.body.addEventListener('playbackFinished', function() {
     chomp.pause();
@@ -83,7 +92,7 @@ setTimeout( function() {
     }
 
     // Reset the plan each cycle
-    // plan = 0;
+    plan = 0;
 
     previous = currentIdx;
     currentIdx = maze.currentIdx();
@@ -138,16 +147,29 @@ function options(available, direction) {
 }
 
 // Have we repeated this pattern?
-function pattern(hist, location, len) {
-  if (hist.path.length >= len) {
-    let quad = hist.path.slice((-len));
-    for (let i=0; i<10; i++) {
-      prev = hist.path.slice((-len), (-i));
-      len++;
-      if (match(quad, prev) && hist.path.includes(location)) {
-        return true;
+function pattern(hist, location) {
+  for (let len=3; len<10; len++) {
+    if (hist.path.length >= len) {
+      let quad = hist.path.slice((-len));
+      let start = len;
+      for (let i=0; i<10; i++) {
+        prev = hist.path.slice((-start), (-i));
+        start++;
+        if (match(quad, prev) && hist.path.includes(location)) {
+          statusLog(`Trapped in ${len} block pattern.`);
+          return true;
+        }
       }
     }
+  }
+  return false;
+}
+
+// Was this our last move?
+function last(hist, location) {
+  let last = hist.path.slice(-1);
+  if (last === location) {
+    return true;
   }
   return false;
 }
@@ -161,7 +183,7 @@ function recalculate(hist, location) {
 // Have we been here recently?
 function recent(hist, location, direction) {
   let quad = hist.path.slice(-4);
-  if (pattern(hist, location, 2) || pattern(hist, location, 3) || pattern(hist, location, 4) || pattern(hist, location, 5) || pattern(hist, location, 6)) {
+  if (pattern(hist, location)) {
     recalculate(hist, location);
     return true;
   }else if (quad.includes(location) && repeats(hist, location, direction)) {
@@ -191,9 +213,15 @@ function should(hist, location, direction, available) {
   // Are we stuck?
   if (
     (!options(available, direction) && recent(hist, location, direction)) ||
-    (!options(available, direction) && pattern(hist))
+    (!options(available, direction) && pattern(hist, location))
   ) {
     stuck();
+  }
+
+  // Was this our last location, and do we have alternatives?
+  if (last(hist, location) && options(available, direction)) {
+    statusLog(' - This was our previous destination');
+    return false;
   }
 
   // If we've been this way more than once and other options are available, then skip
@@ -211,9 +239,18 @@ function should(hist, location, direction, available) {
   return status;
 }
 
+// Set status field
+function statusLog(message) {
+  let status = document.querySelector('#status');
+  status.innerHTML += message + '<br />';
+  return true;
+}
+
 // If we're stuck, change plans
 function stuck() {
-  return (plan === 0)? 1:0;
+  plan = (plan === 0)? 1:0;
+  statusLog(` - Changing strategies: ${strategy[plan]}`);
+  return true;
 }
 
 // Is this a trap?
@@ -225,6 +262,7 @@ function trap() {
       }
     }
   }
+  statusLog(`It's a traaaap!`);
   return true;
 }
 

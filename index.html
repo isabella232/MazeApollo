@@ -10,6 +10,13 @@
         text-transform: uppercase;
       }
 
+      .bezel {
+        position: relative;
+        margin: 0;
+        padding: 0;
+        clear: both;
+      }
+
       #maze {
         background-color: #000;
         margin: 0;
@@ -28,8 +35,7 @@
         color: yellow;
         font-size: 1em;
         text-align: center;
-        vertical-align: middle;
-        line-height: 2em;
+        line-height: 1.5em;
       }
 
       .node.current:after,
@@ -40,11 +46,13 @@
       .node.current,
       .node.visited.current {
         background-image: url('pacman.gif');
+        background-repeat: no-repeat;
         background-size: 100%;
       }
 
       .over, .ready {
         background-color: black;
+        border: 8px solid blue;
         color: red;
         font-size: 3em;
         left: 0;
@@ -53,7 +61,7 @@
         position: absolute;
         right: 0;
         text-align: center;
-        top: 200px;
+        top: 340px;
         width: 40%;
         z-index: 999;
       }
@@ -62,7 +70,9 @@
         color: yellow;
       }
 
-      #score {
+      #score,
+      #status,
+      #mute {
         background-color: black;
         color: white;
         font-family: 'Press Start 2P', monospace;
@@ -72,6 +82,29 @@
         padding: 40px;
         width: 80%;
       }
+
+      #mute {
+        cursor: pointer;
+        position: absolute;
+        right: 0;
+        text-align: right;
+        top: 0;
+        width: 20%;
+      }
+
+      #mute.mute {
+        text-decoration: line-through;
+        color: red;
+      }
+
+      #status {
+        display: none;
+        font-size: 1em;
+        line-height: 1.5em;
+        max-height: 300px;
+        overflow: auto;
+        padding: 0 40px;
+      }
     </style>
   </head>
   <body>
@@ -80,6 +113,10 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/seedrandom/2.4.3/seedrandom.min.js"></script>
     <script type="text/javascript" src="maze.js"></script>
     <script type="text/javascript" src="player.js"></script>
-    <div id="score">1 UP &nbsp;&nbsp;&nbsp; SCORE: 0</div>
+    <div class="bezel">
+      <div id="mute">MUTE</div>
+      <div id="score">1 UP &nbsp;&nbsp;&nbsp; SCORE: 0</div>
+      <div id="status"></div>
+    </div>
   </body>
 </html>
