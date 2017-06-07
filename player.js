@@ -97,9 +97,6 @@ setTimeout( function() {
       }
     }
 
-    // Reset the plan each cycle
-    plan = 0;
-
     previous = currentIdx;
     currentIdx = maze.currentIdx();
     counter++;
@@ -191,16 +188,16 @@ function quadrants(location) {
   let h = maze.height;
   let w2 = Math.ceil(w/2);
   let h2 = Math.ceil(h/2);
-  let r = Math.floor((location/w))+1;
-  let c = Math.round((location%w))+1;
+  let row = Math.floor((location/w))+1;
+  let col = Math.round((location%w))+1;
 
-  if (r <= h2) {
+  if (row <= h2) {
     result = 'n';
   } else {
     result = 's';
   }
 
-  if (c <= w2) {
+  if (col <= w2) {
     result += 'w';
   } else {
     result += 'e';
@@ -296,17 +293,20 @@ function strategize() {
     return 1;
   } else if (quadrant === 'sw') {
     if (pold !== 2) {
-      statusLog(` - Changing strategies (${quadrant}): ${strategy[3]}`);
+      statusLog(` - Changing strategies (${quadrant}): ${strategy[2]}`);
     }
     return 2;
   }
   return 0;
 }
 
-// If we're stuck, change plans
+// If we're stuck, change to the next plan or loop back to first
 function stuck() {
-  plan = (plan === 0)? 1:0;
-  statusLog(` - Changing strategies: ${strategy[plan]}`);
+  plan++;
+  if (plan >= strategy.size) {
+    plan = 0;
+  }
+  statusLog(` - STUCK! Changing strategies to: ${strategy[plan]}`);
   return true;
 }
 
