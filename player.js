@@ -26,9 +26,8 @@ let exit = (maze.height * maze.width - 1);
 let plan = 0;
 let pold = plan;
 let strategy = [
-  ['r', 'd', 'l', 'u'],   // Move toward target
-  ['l', 'd', 'r', 'u'],   // Move from NE to center
-  ['d', 'r', 'l', 'u'],   // Move from NW center
+  ['r', 'd', 'l', 'u'],   // Move from NW toward center
+  ['l', 'd', 'r', 'u'],   // Move from NE toward center
   ['u', 'r', 'd', 'l'],   // Move from SW toward center
   ['u', 'l', 'r', 'd']    // Move from SE toward center
 ];
@@ -285,7 +284,7 @@ function statusLog(message) {
 // Select a strategy based on our location
 function strategize() {
   let quadrant = quadrants(idx);
-  if (quadrant === 'nw') {
+  if (quadrant === 'nw' || quadrant === 'se') {
     if (pold !== 0) {
       statusLog(` - Changing strategies (${quadrant}): ${strategy[0]}`);
     }
@@ -296,15 +295,10 @@ function strategize() {
     }
     return 1;
   } else if (quadrant === 'sw') {
-    if (pold !== 3) {
+    if (pold !== 2) {
       statusLog(` - Changing strategies (${quadrant}): ${strategy[3]}`);
     }
-    return 3;
-  } else if (quadrant === 'se') {
-    if (pold !== 0) {
-      statusLog(` - Changing strategies (${quadrant}): ${strategy[0]}`);
-    }
-    return 0;
+    return 2;
   }
   return 0;
 }
